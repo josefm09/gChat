@@ -77,7 +77,7 @@ fun ChatWebView(
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     // --- MODIFIED USER AGENT ---
-                    settings.userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
+                    settings.userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
                     // --- END MODIFICATION ---
 
                     loadUrl(url)
