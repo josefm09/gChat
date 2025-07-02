@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
             GChatTheme {
                 // The Google Chat URL
                 // Note: Users will likely need to sign in within the WebView
-                val googleChatUrl = "https://chat.google.com"
+                val googleChatUrl = "https://mail.google.com/mail/u/0/#chat/home"
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     ChatWebView(

@@ -7,6 +7,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,6 +30,8 @@ fun ChatWebView(
     onError: (errorCode: Int, description: CharSequence?, failingUrl: String?) -> Unit = { _, _, _ -> }
 ) {
     var isLoading by remember { mutableStateOf(true) }
+    var webViewInstance: WebView? by remember { mutableStateOf(null) }
+    var canGoBack by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         AndroidView(
@@ -39,6 +42,7 @@ fun ChatWebView(
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
                     webViewClient = object : WebViewClient() {
+                        // ... (WebViewClient methods remain the same) ...
                         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                             super.onPageStarted(view, url, favicon)
                             isLoading = true
@@ -48,6 +52,7 @@ fun ChatWebView(
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
                             isLoading = false
+                            canGoBack = view?.canGoBack() ?: false
                             onPageFinished(url)
                         }
 
@@ -55,37 +60,50 @@ fun ChatWebView(
                             view: WebView?,
                             request: WebResourceRequest?
                         ): Boolean {
-                            request?.url?.let { view?.loadUrl(it.toString()) }
+                            val newUrl = request?.url?.toString()
+                            if (newUrl != null && view != null) {
+                                view.loadUrl(newUrl)
+                            }
                             return true
                         }
 
-                        // Make sure your onReceivedError is using the correct parameters
-                        // The original one in your context had `description: String` but it should be `description: CharSequence?`
-                        // and `failingUrl: String` should be `failingUrl: String?`
                         override fun onReceivedError(
                             view: WebView,
                             errorCode: Int,
                             description: String,
                             failingUrl: String
                         ) {
-                            super.onReceivedError(view, errorCode, description, failingUrl) // Pass view here
+                            super.onReceivedError(view, errorCode, description, failingUrl)
                             isLoading = false
+                            canGoBack = view?.canGoBack() ?: false
                             onError(errorCode, description, failingUrl)
                         }
                     }
                     webChromeClient = WebChromeClient()
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
-                    // --- MODIFIED USER AGENT ---
                     settings.userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                    // --- END MODIFICATION ---
+
+                    // --- ZOOM SETTINGS ---
+                    settings.setSupportZoom(true)
+                    settings.builtInZoomControls = true
+                    settings.displayZoomControls = false
+                    // --- END ZOOM SETTINGS ---
+
+                    // --- VIEWPORT & OVERVIEW SETTINGS ---
+                    settings.loadWithOverviewMode = true
+                    settings.useWideViewPort = true
+                    // --- END VIEWPORT & OVERVIEW SETTINGS ---
 
                     loadUrl(url)
+                }.also {
+                    webViewInstance = it
                 }
             },
             update = { webView ->
-                // If the URL could change, you might need to check if the current
-                // webView.url is different from the new `url` and call loadUrl(url)
+                webViewInstance = webView
+                canGoBack = webView.canGoBack()
+                // ... (update logic if url can change) ...
             },
             modifier = Modifier.fillMaxSize()
         )
@@ -94,6 +112,13 @@ fun ChatWebView(
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center)
             )
+        }
+    }
+
+    webViewInstance?.let { wv ->
+        BackHandler(enabled = canGoBack) {
+            wv.goBack()
+            canGoBack = wv.canGoBack()
         }
     }
 }
